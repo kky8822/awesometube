@@ -1,8 +1,8 @@
+import "dotenv/config";
+import "./db";
 import app from "./server";
 
-const PORT = 9000;
-
 const handelistening = () => {
-  console.log(`✅ Server listening on port ${PORT}`);
+  console.log(`✅ Server listening on port ${process.env.PORT}`);
 };
-app.listen(PORT, handelistening);
+app.listen(process.env.PORT, handelistening);

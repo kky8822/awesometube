@@ -1,6 +1,8 @@
-extends base
+extends ../base
 
 block content 
+    if errorMessage
+        span=errorMessage
     form(method="POST", enctype="multipart/form-data")
         label(for="avatar") Avatar
         input(name="avatar", id="avatar", type="file", accept="image/*")

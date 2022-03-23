@@ -6,8 +6,15 @@ html(lang="ko")
     body
         header 
             h1=pageTitle
+        
+            nav
+                ul
+                    li
+                        a(href="/") Home
+                    li
+                        a(href="/join") Join
+                    li
+                        a(href="/login") Login
         main
-            nev
-                a(href="/join") Join
             block content
     include partials/footer.pug
