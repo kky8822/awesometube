@@ -219,7 +219,7 @@ export default user;
 ## Join
 
 POST: data post to backend.  
-file: multer.
+file: multer  
 MongDB & Mongoose model
 
 - form 이해 위한 express encoding
