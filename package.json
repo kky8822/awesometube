@@ -1,0 +1,31 @@
+{
+  "name": "awesometube",
+  "version": "1.0.0",
+  "description": "Happy Awesome family diary",
+  "main": "index.js",
+  "scripts": {
+    "dev:server": "nodemon"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kky8822/awesometube.git"
+  },
+  "author": "kyeyeop kim",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kky8822/awesometube/issues"
+  },
+  "homepage": "https://github.com/kky8822/awesometube#readme",
+  "devDependencies": {
+    "@babel/core": "^7.17.8",
+    "@babel/node": "^7.16.8",
+    "@babel/preset-env": "^7.16.11"
+  },
+  "dependencies": {
+    "express": "^4.17.3",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.4",
+    "nodemon": "^2.0.15",
+    "pug": "^3.0.2"
+  }
+}
