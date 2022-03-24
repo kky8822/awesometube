@@ -1,4 +1,6 @@
 import express from "express";
+import session from "express-session";
+import MongoStore from "connect-mongo";
 import rootRouter from "./routers/rootRouter";
 import usersRouter from "./routers/usersRouter";
 import videosRouter from "./routers/videosRouter";
@@ -13,6 +15,14 @@ app.set("views", process.cwd() + "/src/views");
 
 app.use(logger);
 app.use(express.urlencoded({ extended: true }));
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({ mongoUrl: process.env.DB_URL }),
+  })
+);
 
 app.use(localsMiddleware);
 

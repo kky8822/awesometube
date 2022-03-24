@@ -90,6 +90,20 @@ app.use(logger);
 npm i multer
 ```
 
+- express-session: session control
+
+```c
+//설치
+npm i express-session
+```
+
+- connect-mongo
+
+```c
+//설치
+npm i connect-mongo
+```
+
 ## architecture 구성
 
 init.js: server open  
@@ -220,7 +234,8 @@ export default user;
 
 POST: data post to backend.  
 file: multer  
-MongDB & Mongoose model
+MongDB & Mongoose model  
+bcrypt: hashing middle wear
 
 - form 이해 위한 express encoding
 
@@ -263,4 +278,53 @@ export const postJoin = async (res, rea) => {
           body: {username, email, password, password_c}} = req;
   await User.create({avatarUrl, username, email, password});
 };
+```
+
+- password hashing middlewear
+
+```c
+// model/User.js
+userSchema.pre("save", async function () {
+  if (this.isModified("password")) {
+    this.password = await bcrypt.hash(this.password, 5);
+  }
+});
+```
+
+## Login
+
+- mongoose findOne, exists
+- bcrypt: compare
+- express-session: session middleware
+- client가 server 접속시, session id를 자동으로 resposne하며 이는 client측 cookie와 backend측 sessioin DB에 저장 (by mongo-store)되어 이를 비교하여 backend에서 누가 누구인지 구분 가능 및 session obj에 정보 추가 가능
+- req.session에 로그인 정보 추가
+- res.locals에 로그인 정보 추가 --> template에서 사용
+
+```c
+//server.js
+import session from "express-session";
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,            // resave, saveUninitialized
+    saveUninitialized: false, // session이 수정되었을때만 DB에 저장 (session.loggedIn, session.user, 로그인 되었을때만)
+    store: MongoStore.create({ mongoUrl: process.env.DB_URL }),
+  })
+);
+```
+
+```c
+//userControllers.js
+const user = await User.findOne({ username });
+const ok = await bcrypt.compare(password, user.password); // 순서 password --> hash
+
+req.session.loggedIn = true; //session에 로그인 정보 추가
+req.session.user = user;
+```
+
+```c
+//middlewears.js localsMiddlewear
+res.locals.loggedIn = Boolean(req.session.loggedIn);
+res.locals.loggedInUser = req.session.user || {};
 ```
