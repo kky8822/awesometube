@@ -104,6 +104,12 @@ npm i express-session
 npm i connect-mongo
 ```
 
+- cross-fetch
+
+```c
+npm i cross-fetch
+```
+
 ## architecture 구성
 
 init.js: server open  
