@@ -339,7 +339,7 @@ export const getLogout = (req, res) => {
 }
 ```
 
-## OAuth - Github loggin
+## OAuth - Github login
 
 - Github OAuth 등록: Settings->Developer settings->OAuth app->New OAuth App
 - usersRouter.js
