@@ -347,13 +347,14 @@ export const getLogout = (req, res) => {
 
 ## OAuth - Github login
 
+- https://docs.github.com/en/developers/apps/building-oauth-apps/authorizing-oauth-apps
 - Github OAuth 등록: Settings->Developer settings->OAuth app->New OAuth App
 - usersRouter.js
   ```c
   userRouter.get("/github/start", startGithubLogin);
   userRouter.get("/github/finish", finishGithubLogin);
   ```
-- startGithubLogin
+- startGithubLogin: scope 정의 및 code 요청
 
   ```c
   const baseUrl = "https://github.com/login/oauth/authorize";
@@ -365,7 +366,7 @@ export const getLogout = (req, res) => {
   const params = new URLSearchParams(config).toString();
   const finalUrl = `${baseUrl}?${params}`;
 
-  return res.redirect(finalUrl); // 요청내용 포함 github authorize Url로 "GET" 요청
+  return res.redirect(finalUrl);
   ```
 
 - finishGithubLogin
@@ -418,6 +419,7 @@ export const getLogout = (req, res) => {
     }
 
     let user = await User.findOne({ email: emailObj.email });
+    // 회원 아니면 자동 회원가입
     if (!user) {
       user = await User.create({
         email: emailObj.email,
@@ -427,6 +429,7 @@ export const getLogout = (req, res) => {
         avatarUrl: userData.avatar_url,
       });
     }
+    // 로그인
     req.session.loggedIn = true;
     req.session.user = user;
     res.redirect("/");

@@ -1,6 +1,7 @@
 import User from "../models/User";
 import bcrypt from "bcrypt";
 import fetch from "cross-fetch";
+import { redirect } from "express/lib/response";
 
 export const getJoin = (req, res) => {
   res.render("users/join", { pageTitle: "Join" });
@@ -81,11 +82,10 @@ export const startGithubLogin = (req, res) => {
   const config = {
     client_id: process.env.GH_CLIENT,
     allow_signup: false,
-    scope: "read:user user:email",
+    scope: "read:user, user:email",
   };
   const params = new URLSearchParams(config).toString();
   const finalUrl = `${baseUrl}?${params}`;
-
   return res.redirect(finalUrl);
 };
 
@@ -110,6 +110,7 @@ export const finishGithubLogin = async (req, res) => {
 
   if ("access_token" in tokenRequest) {
     const { access_token } = tokenRequest;
+
     const userData = await (
       await fetch("https://api.github.com/user", {
         headers: {
@@ -129,18 +130,19 @@ export const finishGithubLogin = async (req, res) => {
     const emailObj = emailData.find(
       (email) => email.primary === true && email.verified === true
     );
+
     if (!emailObj) {
       return res.redirect("/login");
     }
 
     let user = await User.findOne({ email: emailObj.email });
     if (!user) {
-      user = await User.create({
-        email: emailObj.email,
+      user = User.create({
         username: userData.login,
+        email: emailObj.email,
         password: "",
         socialOnly: true,
-        avatarUrl: userData.avatar_url,
+        avataUrl: userData.avatar_url,
       });
     }
     req.session.loggedIn = true;
