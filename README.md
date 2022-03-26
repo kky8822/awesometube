@@ -328,3 +328,103 @@ req.session.user = user;
 res.locals.loggedIn = Boolean(req.session.loggedIn);
 res.locals.loggedInUser = req.session.user || {};
 ```
+
+## Logout
+
+```c
+//userControllers.js
+export const getLogout = (req, res) => {
+  req.session.detroy();
+  return res.redirect("/");
+}
+```
+
+## OAuth - Github loggin
+
+- Github OAuth 등록: Settings->Developer settings->OAuth app->New OAuth App
+- usersRouter.js
+  ```c
+  userRouter.get("/github/start", startGithubLogin);
+  userRouter.get("/github/finish", finishGithubLogin);
+  ```
+- startGithubLogin
+
+  ```c
+  const baseUrl = "https://github.com/login/oauth/authorize";
+  const config = {
+    client_id: process.env.GH_CLIENT,
+    allow_signup: false,
+    scope: "read:user user:email", // 요청 data
+  };
+  const params = new URLSearchParams(config).toString();
+  const finalUrl = `${baseUrl}?${params}`;
+
+  return res.redirect(finalUrl); // 요청내용 포함 github authorize Url로 "GET" 요청
+  ```
+
+- finishGithubLogin
+
+  ```c
+  const baseUrl = "https://github.com/login/oauth/access_token";
+  const config = {
+    client_id: process.env.GH_CLIENT,
+    client_secret: process.env.GH_SECRET,
+    code: req.query.code,
+  };
+  const params = new URLSearchParams(config).toString();
+  const finalUrl = `${baseUrl}?${params}`;  // token 요청 Url
+
+  // token 요청 fetch
+  const tokenRequest = await (
+    await fetch(finalUrl, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+      },
+    })
+  ).json();
+
+
+  if ("access_token" in tokenRequest) {
+    // "access_token"으로 api에 data 요청 fetch
+    const { access_token } = tokenRequest;
+    const userData = await (
+      await fetch("https://api.github.com/user", {
+        headers: {
+          Authorization: `token ${access_token}`,
+        },
+      })
+    ).json();
+
+    const emailData = await (
+      await fetch("https://api.github.com/user/emails", {
+        headers: {
+          Authorization: `token ${access_token}`,
+        },
+      })
+    ).json();
+
+    const emailObj = emailData.find(
+      (email) => email.primary === true && email.verified === true
+    );
+    if (!emailObj) {
+      return res.redirect("/login");
+    }
+
+    let user = await User.findOne({ email: emailObj.email });
+    if (!user) {
+      user = await User.create({
+        email: emailObj.email,
+        username: userData.login,
+        password: "",
+        socialOnly: true,
+        avatarUrl: userData.avatar_url,
+      });
+    }
+    req.session.loggedIn = true;
+    req.session.user = user;
+    res.redirect("/");
+  } else {
+    return res.redirect("/login");
+  }
+  ```
