@@ -437,3 +437,11 @@ export const getLogout = (req, res) => {
     return res.redirect("/login");
   }
   ```
+
+## logout
+
+## edit-profile
+
+## change-password
+
+## middleweare - publicOnly, protector

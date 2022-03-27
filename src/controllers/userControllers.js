@@ -1,7 +1,7 @@
 import User from "../models/User";
 import bcrypt from "bcrypt";
 import fetch from "cross-fetch";
-import { redirect } from "express/lib/response";
+import { resetWatchers } from "nodemon/lib/monitor/watch";
 
 export const getJoin = (req, res) => {
   res.render("users/join", { pageTitle: "Join" });
@@ -9,7 +9,7 @@ export const getJoin = (req, res) => {
 
 export const postJoin = async (req, res) => {
   const {
-    file: { path: avatarUrl },
+    file,
     body: { username, email, password, password_c },
   } = req;
 
@@ -30,12 +30,12 @@ export const postJoin = async (req, res) => {
 
   try {
     await User.create({
-      avatarUrl,
+      avatarUrl: file ? file.path : "",
       username,
       email,
       password,
     });
-    return res.redirect("/login");
+    return res.redirect("/users/login");
   } catch (error) {
     return res.status(400).render("users/join", {
       pageTitle: "Join",
@@ -142,7 +142,7 @@ export const finishGithubLogin = async (req, res) => {
         email: emailObj.email,
         password: "",
         socialOnly: true,
-        avataUrl: userData.avatar_url,
+        avatarUrl: userData.avatar_url,
       });
     }
     req.session.loggedIn = true;
@@ -151,4 +151,83 @@ export const finishGithubLogin = async (req, res) => {
   } else {
     return res.redirect("/login");
   }
+};
+
+export const getEditProfile = (req, res) => {
+  return res.render("users/edit-profile", { pageTitle: "Edit Profile" });
+};
+
+export const postEditProfile = async (req, res) => {
+  const {
+    body: { username, email },
+    session: {
+      user: { _id, avatarUrl, username: oldUsername, email: oldEmail },
+    },
+    file,
+  } = req;
+
+  const isMe = username === oldUsername || email === oldEmail;
+  const exist = await User.exists({ $or: [{ username }, { email }] });
+
+  if (!isMe & exist) {
+    return res.status(400).redirect("users/edit-profile", {
+      pageTitle: "Edit Profile",
+      errorMessage: "username/email is already taken.",
+    });
+  }
+
+  try {
+    const updateUser = await User.findByIdAndUpdate(
+      _id,
+      {
+        username,
+        email,
+        avatarUrl: file ? "/" + file.path : avatarUrl,
+      },
+      { new: true }
+    );
+    req.session.user = updateUser;
+    return res.redirect("/");
+  } catch {
+    return res.status(400).redirect("users/edit-profile", {
+      pageTitle: "Edit Profile",
+      errorMessage: "Unknown error is occur.",
+    });
+  }
+};
+
+export const getChangePassword = (req, res) => {
+  if (res.locals.loggedInUser.socialOnly === true) {
+    return res.redirect("/");
+  }
+  return res.render("users/change-password", { pageTitle: "Change Password" });
+};
+
+export const postChangePassword = async (req, res) => {
+  const {
+    session: {
+      user: { _id },
+    },
+    body: { password, newPassword, newPassword_c },
+  } = req;
+  const user = await User.findById(_id);
+
+  const ok = await bcrypt.compare(password, user.password);
+  if (!ok) {
+    return res.status(400).render("users/change-password", {
+      pageTitle: "Change Password",
+      errorMessage: "The current password is incorrect.",
+    });
+  }
+
+  if (newPassword !== newPassword_c) {
+    return res.status(400).render("users/change-password", {
+      pageTitle: "Change Password",
+      errorMessage: "The password does not mathch confirmation.",
+    });
+  }
+
+  user.password = newPassword;
+  await user.save();
+  return res.redirect("/users/logout");
 };
